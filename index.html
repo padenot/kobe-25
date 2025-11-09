@@ -713,6 +713,11 @@
     <h1 style="font-size: 45px !important;">Capture</h1>
   </div>
 
+  ???
+
+  Capture a cat at 30fps, so this translates to an interval between images of
+  1000 / 30 = 33ms, so we can count roughy that duration as an initial latency.
+
   ---
 
   <img src="encoding.jpg" style="position: absolute;  width: 100%; height:100%;top:0;left:0;object-fit: cover;z-index: 0;">
@@ -720,6 +725,13 @@
   <div style="margin-left: 0; z-index: 100; position: absolute; right: 1.5em; bottom: 0.8em;">
     <h1 style="font-size: 45px !important;">Encoding</h1>
   </div>
+
+  ???
+
+  Now we encode our frames. We assume we've read a few tutorials online, so we
+  configure OBS and ffmpeg correctly, and this adds a few dozen milliseconds of
+  latency. This gets us a series of "packets", each containing a single image.
+  They need to be decoded in order.
 
   ---
 
@@ -729,6 +741,11 @@
     <h1 style="font-size: 45px !important;">Muxing</h1>
   </div>
 
+  ???
+
+  Then it is time to package a series of encoded frames, associated with their
+  respective timestamp, in a binary stream.
+
   ---
 
   <img src="upload.jpg" style="position: absolute;  width: 100%; height:100%;top:0;left:0;object-fit: cover;z-index: 0;">
@@ -736,6 +753,12 @@
   <div style="margin-left: 0; z-index: 100; position: absolute; left: 1.5em; top: 0.3em;">
     <h1 style="font-size: 45px !important;">Upload</h1>
   </div>
+
+  ???
+
+  A common protocol for this was historically RTMP, but SRT is a more modern
+  alternative. We upload to an ingestion server, and that takes up to 100ms,
+  depending on where it is.
 
   ---
 
@@ -745,6 +768,15 @@
     <h1 style="font-size: 45px !important;">Transcoding / Remuxing</h1>
   </div>
 
+  ???
+
+  Then the service typically encodes at various different resolutions, so that
+  the stream can be consumed on devices with a slow internet. Let's say this add
+  up to a second or so of latency, this can vary a lot. This system also
+  packages the encoded packets into a container, typically fragmented mp4, and
+  is is when the problems begin: those segments can be very long, typically
+  multiple seconds long.
+
   ---
 
   <img src="cdn.jpg" style="position: absolute;  width: 100%; height:100%;top:0;left:0;object-fit: cover;z-index: 0;">
@@ -752,6 +784,11 @@
   <div style="margin-left: 0; z-index: 100; position: absolute; left: 1.5em; top: 0.3em;">
     <h1 style="font-size: 45px !important;">Upload to CDN</h1>
   </div>
+
+  ???
+
+  Then the system sends the segments to a CDN, so that the segments can be
+  consumed in multiple locations on earth efficiently.
 
   ---
 
@@ -761,6 +798,11 @@
     <h1 style="font-size: 45px !important;">CDN propagation</h1>
   </div>
 
+  ???
+
+  The CDN propagates to somewhere close to Kobe, via a route that is, again,
+  sometimes not optimal for latency, but we can't do much about it at our level.
+
   ---
 
   <img src="download.jpg" style="position: absolute;  width: 100%; height:100%;top:0;left:0;object-fit: cover;z-index: 0;">
@@ -768,6 +810,11 @@
   <div style="margin-left: 0; z-index: 100; position: absolute; left: 1.5em; top: 0.3em;">
     <h1 style="font-size: 45px !important;">Download to device</h1>
   </div>
+
+  ???
+
+  Now the user device downloads the segments. Depending on where we are w.r.t.
+  the CDN, it can also take some time.
 
   ---
 
@@ -777,6 +824,13 @@
     <h1 style="font-size: 45px !important;">Demuxing / segment buffering</h1>
   </div>
 
+  ???
+
+  Then we have segments on the local device. Typically, for resilience against
+  network issues, a few segments are buffered ahead, and the latency (that can't
+  be lowered than a segment) baloons. We "demux" the segments into raw video
+  frames.
+
   ---
 
   <img src="decoding.jpg" style="position: absolute;  width: 100%; height:100%;top:0;left:0;object-fit: cover;z-index: 0;">
@@ -785,9 +839,28 @@
     <h1 style="font-size: 45px !important;">Decoding</h1>
   </div>
 
+  ???
+
+  and then we decode those videos frames, typically in hardware. Again, we
+  buffer a few of those frames, typically up to a second ahead. This is
+  sometimes configurable in software.
+
   ---
 
   <img src="display.jpg" style="position: absolute;  width: 100%; height:100%;top:0;left:0;object-fit: cover;z-index: 0;">
+
+  ???
+
+  At this point, we have a series of images with timestamp, and we can display
+  then at the right time on the screen.
+
+  ---
+
+  class: center, middle
+
+  # The problem is therefore segment-based buffering
+
+  (there are other problems, but this is the biggest problem)
 
   ---
 
